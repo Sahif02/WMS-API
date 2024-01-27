@@ -1,60 +1,79 @@
-// Import required modules
 const express = require('express');
-const mysql = require('mysql2');
+const bodyParser = require('body-parser');
 
-// Create a connection to the database
-const connection = mysql.createConnection({
-    host: 'auth-db1207.hstgr.io',
-    user: 'u418262249_ewbs',
-    password: '#EwbSports2024',
-    database: 'u418262249_ewb'
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+
+// Sample in-memory database
+let users = [];
+let lists = [];
+
+// Endpoint to create a new user
+app.post('/api/users', (req, res) => {
+    const user = req.body;
+    users.push(user);
+    res.json(user);
 });
 
-connection.connect(err => {
-    if (err) {
-        console.error('Error connecting to database:', err);
+// Endpoint to get all users
+app.get('/api/users', (req, res) => {
+    res.json(users);
+});
+
+app.get('/api/users/:username', (req, res) => {
+    const username = req.params.username;
+    const user = users.find(user => user.username === username);
+
+    if (!user) {
+        res.status(404).json({ error: 'User not found' });
     } else {
-        console.log('Connected to the database');
+        res.json(user);
     }
 });
 
-// Create an Express application
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Define a route to get all users
-app.get('/api/users', (req, res) => {
-    // Fetch users from the database
-    connection.query('SELECT * FROM users', (err, results) => {
-        if (err) {
-            console.error('Error executing query:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.json(results);
-        }
-    });
-});
-
-// Define a route to get a specific user by ID
-app.get('/api/users/:id', (req, res) => {
+// Endpoint to update a user
+app.put('/api/users/:id', (req, res) => {
     const userId = req.params.id;
-
-    // Fetch a user by ID from the database
-    connection.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
-        if (err) {
-            console.error('Error executing query:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            if (results.length > 0) {
-                res.json(results[0]);
-            } else {
-                res.status(404).json({ error: 'User not found' });
-            }
-        }
-    });
+    const updatedUser = req.body;
+    // Update user logic here (for simplicity, updating in-memory)
+    users = users.map(user => (user.id === userId ? updatedUser : user));
+    res.json(updatedUser);
 });
 
-// Start the Express server
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Endpoint to create a new user
+app.post('/api/lists', (req, res) => {
+    const list = req.body;
+    lists.push(list);
+    res.json(list);
+});
+
+// Endpoint to get all users
+app.get('/api/lists', (req, res) => {
+    res.json(lists);
+});
+
+// app.get('/api/lists/:username', (req, res) => {
+//     const username = req.params.username;
+//     const user = users.find(user => user.username === username);
+
+//     if (!user) {
+//         res.status(404).json({ error: 'User not found' });
+//     } else {
+//         res.json(user);
+//     }
+// });
+
+// Endpoint to update a user
+app.put('/api/lists/:id', (req, res) => {
+    const listId = req.params.id;
+    const updatedlist = req.body;
+    // Update user logic here (for simplicity, updating in-memory)
+    lists = lists.map(list => (list.id === listId ? updatedlist : list));
+    res.json(updatedlist);
+});
+
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
 });
