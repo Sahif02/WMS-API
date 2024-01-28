@@ -1,79 +1,108 @@
 const express = require('express');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Sample in-memory database
-let users = [];
-let lists = [];
-
-// Endpoint to create a new user
-app.post('/api/users', (req, res) => {
-    const user = req.body;
-    users.push(user);
-    res.json(user);
+const connection = mysql.createConnection({
+    host: 'srv1207.hstgr.io',
+    user: 'u418262249_wms_api',
+    password: 'Wmsapi2024',
+    database: 'u418262249_API'
 });
 
-// Endpoint to get all users
-app.get('/api/users', (req, res) => {
-    res.json(users);
-});
-
-app.get('/api/users/:username', (req, res) => {
-    const username = req.params.username;
-    const user = users.find(user => user.username === username);
-
-    if (!user) {
-        res.status(404).json({ error: 'User not found' });
+connection.connect(err => {
+    if (err) {
+        console.error('Error connecting to database:', err);
     } else {
-        res.json(user);
+        console.log('Connected to the database');
     }
 });
 
-// Endpoint to update a user
-app.put('/api/users/:id', (req, res) => {
-    const userId = req.params.id;
+// GET all users
+app.get('/api/users', (req, res) => {
+    connection.query('SELECT * FROM users', (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (results.length > 0) {
+                res.json(results);
+            } else {
+                res.status(404).json({ error: 'No users found' });
+            }
+        }
+    });
+});
+
+// GET a specific user by username
+app.get('/api/users/:username', (req, res) => {
+    const username = req.params.username;
+    connection.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (results.length > 0) {
+                res.json(results[0]);
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        }
+    });
+});
+
+// POST create a new user
+app.post('/api/users', (req, res) => {
+    const newUser = req.body;
+    connection.query('INSERT INTO users SET ?', [newUser], (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.status(201).json({ message: 'User created successfully', userId: result.insertId });
+        }
+    });
+});
+
+// PUT update a user by username
+app.put('/api/users/:username', (req, res) => {
+    const username = req.params.username;
     const updatedUser = req.body;
-    // Update user logic here (for simplicity, updating in-memory)
-    users = users.map(user => (user.id === userId ? updatedUser : user));
-    res.json(updatedUser);
+    connection.query('UPDATE users SET ? WHERE username = ?', [updatedUser, username], (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (result.affectedRows > 0) {
+                res.json({ message: 'User updated successfully' });
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        }
+    });
 });
 
-// Endpoint to create a new user
-app.post('/api/lists', (req, res) => {
-    const list = req.body;
-    lists.push(list);
-    res.json(list);
+// DELETE a user by username
+app.delete('/api/users/:username', (req, res) => {
+    const username = req.params.username;
+    connection.query('DELETE FROM users WHERE username = ?', [username], (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            if (result.affectedRows > 0) {
+                res.json({ message: 'User deleted successfully' });
+            } else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        }
+    });
 });
 
-// Endpoint to get all users
-app.get('/api/lists', (req, res) => {
-    res.json(lists);
-});
-
-// app.get('/api/lists/:username', (req, res) => {
-//     const username = req.params.username;
-//     const user = users.find(user => user.username === username);
-
-//     if (!user) {
-//         res.status(404).json({ error: 'User not found' });
-//     } else {
-//         res.json(user);
-//     }
-// });
-
-// Endpoint to update a user
-app.put('/api/lists/:id', (req, res) => {
-    const listId = req.params.id;
-    const updatedlist = req.body;
-    // Update user logic here (for simplicity, updating in-memory)
-    lists = lists.map(list => (list.id === listId ? updatedlist : list));
-    res.json(updatedlist);
-});
-
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
