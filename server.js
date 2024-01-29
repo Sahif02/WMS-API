@@ -105,7 +105,7 @@ app.get('/api/lists', async (req, res, next) => {
 app.get('/api/lists/:listID', async (req, res, next) => {
     const listID = req.params.listID;
     try {
-        const [list] = await pool.query('SELECT * FROM lists WHERE listsID = ?', [listID]);
+        const [list] = await pool.query('SELECT * FROM lists WHERE listID = ?', [listID]);
         res.json(list[0]);
     } catch (err) {
         next(err);
@@ -128,7 +128,7 @@ app.put('/api/lists/:listID', async (req, res, next) => {
     const listID = req.params.listID;
     const updatedList = req.body;
     try {
-        await pool.query('UPDATE lists SET ? WHERE listsID = ?', [updatedList, listID]);
+        await pool.query('UPDATE lists SET ? WHERE listID = ?', [updatedList, listID]);
         res.json({ message: 'List updated successfully' });
     } catch (err) {
         next(err);
@@ -139,7 +139,7 @@ app.put('/api/lists/:listID', async (req, res, next) => {
 app.delete('/api/lists/:listID', async (req, res, next) => {
     const listID = req.params.listID;
     try {
-        await pool.query('DELETE FROM lists WHERE listsID = ?', [listID]);
+        await pool.query('DELETE FROM lists WHERE listID = ?', [listID]);
         res.json({ message: 'List deleted successfully' });
     } catch (err) {
         next(err);
